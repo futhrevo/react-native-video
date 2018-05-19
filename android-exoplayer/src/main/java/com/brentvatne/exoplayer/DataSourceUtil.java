@@ -63,7 +63,27 @@ public class DataSourceUtil {
     }
 
     private static HttpDataSource.Factory buildHttpDataSourceFactory(Context context, DefaultBandwidthMeter bandwidthMeter) {
-        return new OkHttpDataSourceFactory(OkHttpClientProvider.getOkHttpClient(), getUserAgent(context), bandwidthMeter);
+        OkHttpDataSourceFactory httpDataSourceFactory = new OkHttpDataSourceFactory(OkHttpClientProvider.getOkHttpClient(), getUserAgent(context), bandwidthMeter);
+
+//            httpDataSourceFactory.getDefaultRequestProperties().set("Cookie", cooky);
+
+        return httpDataSourceFactory;
     }
 
 }
+
+/**
+ * Object {CloudFront-Policy: "eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9tZW…oYW4iOnsiQVdTOkVwb2NoVGltZSI6MTUyNjY2MzE1NX19fV19", CloudFront-Signature: "lCpCJGYTmd0n3kq9AoSR68XdT~02dpTSVYoZ16swsi-AfoMmct…i25UaaS7r6rnM1e9TtvhHZJDZSF5N3dfQDh67QdGt78GgkQ__", CloudFront-Key-Pair-Id: "APKAJGZNI64GDFVTOK7Q"}
+ CloudFront-Key-Pair-Id
+ :
+ "APKAJGZNI64GDFVTOK7Q"
+ CloudFront-Policy
+ :
+ "eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9tZWRpYS5odWIzMS5jb20vKiIsIkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTUyNjY2MzE1NX19fV19"
+ CloudFront-Signature
+ :
+ "lCpCJGYTmd0n3kq9AoSR68XdT~02dpTSVYoZ16swsi-AfoMmctwn49VqBLnus0akTuLMaQ1E1eP8B2wnMnztP-NPBerOqEFMnIq6IkM1z~UWp0uqjqlZpk~kS2bKwKnod3gHOJ5eeZaKO2Kyj2vP2fSbqqkcKzrPkCzAVzdF7L5ELOcjbpKg9Xbk0P1iyjJv9tzJAkp-qUlarX69QJ-tHS66Ca6fPR42sDvLkBPHbbdr1jht1wrcc91rHPMhffmi1gksuA8lTdTSIFUgVYjjPkBYIzqxVFVg5qXt7qGi25UaaS7r6rnM1e9TtvhHZJDZSF5N3dfQDh67QdGt78GgkQ__"
+ __proto__
+ :
+ Object
+ * **/
