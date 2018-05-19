@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "node_modules/react-native/packager/packager.sh"
+    "start": "react-native start"
   },
   "dependencies": {
-    "react": "16.3.2",
+    "react": "^16.3.2",
     "react-native": "0.55.4",
-    "react-native-video": "file:../"
+    "react-native-video": "file:.."
   }
 }

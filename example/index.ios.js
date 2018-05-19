@@ -16,7 +16,7 @@ import {
   View,
 } from 'react-native';
 
-import Video from '@drivetribe/react-native-video';
+import Video from 'react-native-video';
 
 class VideoPlayer extends Component {
   constructor(props) {

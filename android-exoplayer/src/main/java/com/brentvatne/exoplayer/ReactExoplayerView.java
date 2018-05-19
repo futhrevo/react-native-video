@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.media.AudioManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Message;
 import android.text.TextUtils;
@@ -46,10 +47,18 @@ import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.util.Util;
 
+import java.io.IOException;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
-import java.lang.Math;
+import java.net.CookieStore;
+import java.net.HttpCookie;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.List;
 
 @SuppressLint("ViewConstructor")
 class ReactExoplayerView extends FrameLayout implements
@@ -471,11 +480,6 @@ class ReactExoplayerView extends FrameLayout implements
         }
     }
 
-    @Override
-    public void onPlaybackParametersChanged(PlaybackParameters playbackParameters) {
-        // Do nothing.
-    }
-
     @Override public void onSeekProcessed() {
 
     }
@@ -651,5 +655,54 @@ class ReactExoplayerView extends FrameLayout implements
 
     public void setDisableFocus(boolean disableFocus) {
         this.disableFocus = disableFocus;
+    }
+
+    public void setCookies(String cooky){
+        Log.d("received cookies", cooky + " ");
+        ArrayList<HttpCookie> cookies = new ArrayList();
+        cookies.add(new HttpCookie("CloudFront-Policy", "cookie-value"));
+        cookies.add(new HttpCookie("CloudFront-Signature", "cookie-value"));
+        cookies.add(new HttpCookie("CloudFront-Key-Pair-Id", "cookie-value"));
+
+        CookieStore cookieJar = DEFAULT_COOKIE_MANAGER.getCookieStore();
+
+        try {
+            URL url = new URL("https://example.com");
+            for (HttpCookie cookie : cookies) {
+                cookieJar.add(url.toURI(), cookie);
+            }
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        printCookies();
+
+    }
+
+    public void printCookies(){
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                URL url = null;
+                try {
+                    url = new URL("https://example.com");
+                    URLConnection connection = url.openConnection();
+                    connection.getContent();
+                    CookieStore cookieJar =  DEFAULT_COOKIE_MANAGER.getCookieStore();
+                    List<HttpCookie> cookies =
+                            cookieJar.getCookies();
+                    for (HttpCookie cookie: cookies) {
+                        Log.d("CookieHandler" , cookie.toString());
+                    }
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        AsyncTask.execute(runnable);
+
     }
 }
