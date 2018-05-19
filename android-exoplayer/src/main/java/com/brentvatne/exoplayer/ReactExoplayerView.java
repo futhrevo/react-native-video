@@ -1,6 +1,7 @@
 package com.brentvatne.exoplayer;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.media.AudioManager;
 import android.net.Uri;
@@ -9,6 +10,8 @@ import android.os.Handler;
 import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
+import android.view.Window;
 import android.widget.FrameLayout;
 
 import com.brentvatne.react.R;
@@ -87,6 +90,7 @@ class ReactExoplayerView extends FrameLayout implements
     private int resumeWindow;
     private long resumePosition;
     private boolean loadVideoStarted;
+    private boolean isFullscreen;
     private boolean isPaused = true;
     private boolean isBuffering;
     private float rate = 1f;
@@ -117,7 +121,8 @@ class ReactExoplayerView extends FrameLayout implements
                             && player.getPlayWhenReady()
                             ) {
                         long pos = player.getCurrentPosition();
-                        eventEmitter.progressChanged(pos, player.getBufferedPercentage());
+                        long bufferedDuration = player.getBufferedPercentage() * player.getDuration();
+                        eventEmitter.progressChanged(pos, bufferedDuration, player.getDuration());
                         msg = obtainMessage(SHOW_PROGRESS);
                         sendMessageDelayed(msg, Math.round(mProgressUpdateInterval));
                     }
@@ -333,6 +338,9 @@ class ReactExoplayerView extends FrameLayout implements
     }
 
     private void onStopPlayback() {
+        if (isFullscreen) {
+            setFullscreen(false);
+        }
         setKeepScreenOn(false);
         audioManager.abandonAudioFocus(this);
     }
@@ -701,5 +709,36 @@ class ReactExoplayerView extends FrameLayout implements
         };
         AsyncTask.execute(runnable);
 
+    public void setFullscreen(boolean fullscreen) {
+        if (fullscreen == isFullscreen) {
+            return; // Avoid generating events when nothing is changing
+        }
+        isFullscreen = fullscreen;
+
+        Activity activity = themedReactContext.getCurrentActivity();
+        if (activity == null) {
+            return;
+        }
+        Window window = activity.getWindow();
+        View decorView = window.getDecorView();
+        int uiOptions;
+        if (isFullscreen) {
+            if (Util.SDK_INT >= 19) { // 4.4+
+                uiOptions = SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                        | SYSTEM_UI_FLAG_FULLSCREEN;
+            } else {
+                uiOptions = SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | SYSTEM_UI_FLAG_FULLSCREEN;
+            }
+            eventEmitter.fullscreenWillPresent();
+            decorView.setSystemUiVisibility(uiOptions);
+            eventEmitter.fullscreenDidPresent();
+        } else {
+            uiOptions = View.SYSTEM_UI_FLAG_VISIBLE;
+            eventEmitter.fullscreenWillDismiss();
+            decorView.setSystemUiVisibility(uiOptions);
+            eventEmitter.fullscreenDidDismiss();
+        }
     }
 }

@@ -135,6 +135,8 @@ protected List<ReactPackage> getPackages() {
 
 // Later to trigger fullscreen
 this.player.presentFullscreenPlayer()
+// Disable fullscreen
+this.player.dismissFullscreenPlayer()
 
 // To set video position in seconds (seek)
 this.player.seek(0)
@@ -152,6 +154,45 @@ var styles = StyleSheet.create({
 ```
 
 - * *For iOS you also need to specify muted for this to work*
+
+To see full list of available props, you can check [the propTypes](https://github.com/react-native-community/react-native-video/blob/master/Video.js#L246) of the Video.js component.
+
+## Android Expansion File Usage
+
+```javascript
+// Within your render function, assuming you have a file called
+// "background.mp4" in your expansion file. Just add your main and (if applicable) patch version
+<Video source={{uri: "background", mainVer: 1, patchVer: 0}} // Looks for .mp4 file (background.mp4) in the given expansion version.
+       poster="https://baconmockup.com/300/200/" // uri to an image to display until the video plays
+       rate={1.0}                   // 0 is paused, 1 is normal.
+       volume={1.0}                 // 0 is muted, 1 is normal.
+       muted={false}                // Mutes the audio entirely.
+       paused={false}               // Pauses playback entirely.
+       resizeMode="cover"           // Fill the whole screen at aspect ratio.
+       repeat={true}                // Repeat forever.
+       onLoadStart={this.loadStart} // Callback when video starts to load
+       onLoad={this.setDuration}    // Callback when video loads
+       onProgress={this.setTime}    // Callback every ~250ms with currentTime
+       onEnd={this.onEnd}           // Callback when playback finishes
+       onError={this.videoError}    // Callback when video cannot be loaded
+       style={styles.backgroundVideo} />
+
+// Later to enable fullscreen UI mode (ExoPlayer only). Combine with setting the style to be height & width from Dimensions.get('screen')
+this.player.presentFullscreenPlayer()
+// Disable fullscreen UI mode
+this.player.dismissFullscreenPlayer()
+
+// Later on in your styles..
+var styles = Stylesheet.create({
+  backgroundVideo: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    right: 0,
+  },
+});
+```
 
 ### Load files with the RN Asset System
 
@@ -178,7 +219,11 @@ Seeks the video to the specified time (in seconds). Access using a ref to the co
 
 `presentFullscreenPlayer()`
 
-Toggles a fullscreen player. Access using a ref to the component.
+Enable the fullscreen player. Access using a ref to the component.
+
+`dimissFullscreenPlayer()`
+
+Disable the fullscreen player. Access using a ref to the component.
 
 ## Examples
 
