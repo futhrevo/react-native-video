@@ -322,6 +322,7 @@ static NSString *const timedMetadata = @"timedMetadata";
   NSString *uri = [source objectForKey:@"uri"];
   NSString *type = [source objectForKey:@"type"];
   NSDictionary *headers = [source objectForKey:@"requestHeaders"];
+  NSDictionary *newcookies = [source objectForKey:@"setCookies"];
   
   NSURL *url = (isNetwork || isAsset) ?
     [NSURL URLWithString:uri] :
@@ -332,6 +333,19 @@ static NSString *const timedMetadata = @"timedMetadata";
       AVURLAsset* asset = [AVURLAsset URLAssetWithURL:url options:@{@"AVURLAssetHTTPHeaderFieldsKey": headers}];
       return [AVPlayerItem playerItemWithAsset:asset];
     }
+      if ([newcookies count] > 0) {
+          for (NSString* key in newcookies) {
+              NSMutableDictionary *cookieProperties = [NSMutableDictionary dictionary];
+              [cookieProperties setObject:key forKey:NSHTTPCookieName];
+              [cookieProperties setObject:[newcookies objectForKey:key] forKey:NSHTTPCookieValue];
+              [cookieProperties setObject:@"/" forKey:NSHTTPCookiePath];
+              [cookieProperties setObject:[url host] forKey:NSHTTPCookieDomain];
+              [cookieProperties setObject:@"TRUE" forKey:NSHTTPCookieSecure];
+
+              NSHTTPCookie *cookie = [NSHTTPCookie cookieWithProperties:cookieProperties];
+              [[NSHTTPCookieStorage sharedHTTPCookieStorage] setCookie:cookie];
+          }
+      }
     NSArray *cookies = [[NSHTTPCookieStorage sharedHTTPCookieStorage] cookies];
     AVURLAsset *asset = [AVURLAsset URLAssetWithURL:url options:@{AVURLAssetHTTPCookiesKey : cookies}];
     return [AVPlayerItem playerItemWithAsset:asset];

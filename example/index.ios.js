@@ -131,7 +131,11 @@ class VideoPlayer extends Component {
       <View style={styles.container}>
         <TouchableOpacity style={styles.fullScreen} onPress={() => {this.setState({paused: !this.state.paused})}}>
           <Video
-            source={require('./broadchurch.mp4')}
+            source={{ uri: 'https://example.com/tester/playlist.m3u8',
+            cookies: { "CloudFront-Key-Pair-Id": "xxxxxxxxxxx",
+            "CloudFront-Policy": "xxxxxxx-xxxxxxxx-xxxxxx",
+            "CloudFront-Signature": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+} }}
             style={styles.fullScreen}
             rate={this.state.rate}
             paused={this.state.paused}

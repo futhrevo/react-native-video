@@ -18,7 +18,6 @@ import com.brentvatne.react.R;
 import com.brentvatne.receiver.AudioBecomingNoisyReceiver;
 import com.brentvatne.receiver.BecomingNoisyListener;
 import com.facebook.react.bridge.LifecycleEventListener;
-import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.DefaultRenderersFactory;
@@ -51,12 +50,17 @@ import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.util.Util;
 
-import java.io.IOException;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
-import java.lang.Math;
+import java.net.CookieStore;
+import java.net.HttpCookie;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+
+import okhttp3.HttpUrl;
 
 @SuppressLint("ViewConstructor")
 class ReactExoplayerView extends FrameLayout implements
@@ -94,6 +98,7 @@ class ReactExoplayerView extends FrameLayout implements
     private boolean isPaused = true;
     private boolean isBuffering;
     private float rate = 1f;
+    private boolean refreshLoad = false;
 
     // Props from React
     private Uri srcUri;
@@ -103,6 +108,7 @@ class ReactExoplayerView extends FrameLayout implements
     private float mProgressUpdateInterval = 250.0f;
     private boolean playInBackground = false;
     private Map<String, String> requestHeaders;
+    private List<String> cookies = new ArrayList<>();
     // \ End props
 
     // React
@@ -364,7 +370,7 @@ class ReactExoplayerView extends FrameLayout implements
      * @return A new DataSource factory.
      */
     private DataSource.Factory buildDataSourceFactory(boolean useBandwidthMeter) {
-        return DataSourceUtil.getDefaultDataSourceFactory(getContext(), useBandwidthMeter ? BANDWIDTH_METER : null, requestHeaders);
+        return DataSourceUtil.getDefaultDataSourceFactory(getContext(), useBandwidthMeter ? BANDWIDTH_METER : null, requestHeaders,null, refreshLoad);
     }
 
     // AudioManager.OnAudioFocusChangeListener implementation
@@ -565,7 +571,7 @@ class ReactExoplayerView extends FrameLayout implements
 
     // ReactExoplayerViewManager public api
 
-    public void setSrc(final Uri uri, final String extension, Map<String, String> headers) {
+    public void setSrc(final Uri uri, final String extension, Map<String, String> headers,List<String> newcookies) {
         if (uri != null) {
             boolean isOriginalSourceNull = srcUri == null;
             boolean isSourceEqual = uri.equals(srcUri);
@@ -573,7 +579,17 @@ class ReactExoplayerView extends FrameLayout implements
             this.srcUri = uri;
             this.extension = extension;
             this.requestHeaders = headers;
-            this.mediaDataSourceFactory = DataSourceUtil.getDefaultDataSourceFactory(getContext(), BANDWIDTH_METER, requestHeaders);
+            if(!newcookies.isEmpty()){
+                if(!cookies.isEmpty()){
+                    cookies.clear();
+                }
+
+                cookies.addAll(newcookies);
+                refreshLoad = true;
+            }
+
+            this.mediaDataSourceFactory = DataSourceUtil.getDefaultDataSourceFactory(getContext(), BANDWIDTH_METER, requestHeaders, newcookies, refreshLoad);
+            refreshLoad = false;
 
             if (!isOriginalSourceNull && !isSourceEqual) {
                 reloadSource();
@@ -662,52 +678,36 @@ class ReactExoplayerView extends FrameLayout implements
         this.disableFocus = disableFocus;
     }
 
-    public void setCookies(String cooky){
-        Log.d("received cookies", cooky + " ");
-        ArrayList<HttpCookie> cookies = new ArrayList();
-        cookies.add(new HttpCookie("CloudFront-Policy", "cookie-value"));
-        cookies.add(new HttpCookie("CloudFront-Signature", "cookie-value"));
-        cookies.add(new HttpCookie("CloudFront-Key-Pair-Id", "cookie-value"));
-
+    public void setCookies(ArrayList<HttpCookie> cookies){
+        if(this.srcUri == null || cookies.isEmpty()){
+            return;
+        }
         CookieStore cookieJar = DEFAULT_COOKIE_MANAGER.getCookieStore();
 
-        try {
-            URL url = new URL("https://example.com");
-            for (HttpCookie cookie : cookies) {
-                cookieJar.add(url.toURI(), cookie);
-            }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
+        URI uri = new HttpUrl.Builder().scheme(this.srcUri.getScheme()).host(this.srcUri.getHost()).build().uri();
+        for (HttpCookie cookie : cookies) {
+            cookieJar.add(uri, cookie);
         }
+        refreshLoad = true;
         printCookies();
 
     }
 
-    public void printCookies(){
+    public void printCookies() {
+        final Uri srcurl = this.srcUri;
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                URL url = null;
-                try {
-                    url = new URL("https://example.com");
-                    URLConnection connection = url.openConnection();
-                    connection.getContent();
-                    CookieStore cookieJar =  DEFAULT_COOKIE_MANAGER.getCookieStore();
-                    List<HttpCookie> cookies =
-                            cookieJar.getCookies();
-                    for (HttpCookie cookie: cookies) {
-                        Log.d("CookieHandler" , cookie.toString());
-                    }
-                } catch (MalformedURLException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                CookieStore cookieJar = DEFAULT_COOKIE_MANAGER.getCookieStore();
+                List<HttpCookie> cookies =
+                        cookieJar.getCookies();
+                for (HttpCookie cookie : cookies) {
+                    Log.d("CookieHandler", cookie.toString());
                 }
             }
         };
         AsyncTask.execute(runnable);
+    }
 
     public void setFullscreen(boolean fullscreen) {
         if (fullscreen == isFullscreen) {

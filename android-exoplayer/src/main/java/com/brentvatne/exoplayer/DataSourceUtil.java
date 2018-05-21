@@ -1,10 +1,8 @@
 package com.brentvatne.exoplayer;
 
 import android.content.Context;
-import android.util.ArrayMap;
+import android.text.TextUtils;
 
-import com.facebook.react.bridge.ReadableMap;
-import com.facebook.react.bridge.ReadableNativeMap;
 import com.facebook.react.modules.network.OkHttpClientProvider;
 import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSourceFactory;
 import com.google.android.exoplayer2.upstream.DataSource;
@@ -13,8 +11,7 @@ import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.upstream.HttpDataSource;
 import com.google.android.exoplayer2.util.Util;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class DataSourceUtil {
@@ -24,6 +21,7 @@ public class DataSourceUtil {
 
     private static DataSource.Factory rawDataSourceFactory = null;
     private static DataSource.Factory defaultDataSourceFactory = null;
+    private static final String COOKIE = "Cookie";
     private static String userAgent = null;
 
     public static void setUserAgent(String userAgent) {
@@ -48,10 +46,11 @@ public class DataSourceUtil {
         DataSourceUtil.rawDataSourceFactory = factory;
     }
 
-    public static DataSource.Factory getDefaultDataSourceFactory(Context context, DefaultBandwidthMeter bandwidthMeter, Map<String, String> requestHeaders) {
-        if (defaultDataSourceFactory == null || (requestHeaders != null && !requestHeaders.isEmpty())) {
-            defaultDataSourceFactory = buildDataSourceFactory(context, bandwidthMeter, requestHeaders);
+    public static DataSource.Factory getDefaultDataSourceFactory(Context context, DefaultBandwidthMeter bandwidthMeter, Map<String, String> requestHeaders, List<String> cookies, boolean refresh) {
+        if (defaultDataSourceFactory == null || refresh) {
+            defaultDataSourceFactory = buildDataSourceFactory(context, bandwidthMeter, requestHeaders, cookies);
         }
+
         return defaultDataSourceFactory;
     }
 
@@ -63,18 +62,22 @@ public class DataSourceUtil {
         return new RawResourceDataSourceFactory(context.getApplicationContext());
     }
 
-    private static DataSource.Factory buildDataSourceFactory(Context context, DefaultBandwidthMeter bandwidthMeter, Map<String, String> requestHeaders) {
+    private static DataSource.Factory buildDataSourceFactory(Context context, DefaultBandwidthMeter bandwidthMeter, Map<String, String> requestHeaders, List<String> cookies) {
         Context appContext = context.getApplicationContext();
         return new DefaultDataSourceFactory(appContext, bandwidthMeter,
-                buildHttpDataSourceFactory(appContext, bandwidthMeter, requestHeaders));
+                buildHttpDataSourceFactory(appContext, bandwidthMeter, requestHeaders, cookies));
     }
 
-    private static HttpDataSource.Factory buildHttpDataSourceFactory(Context context, DefaultBandwidthMeter bandwidthMeter, Map<String, String> requestHeaders) {
-        OkHttpDataSourceFactory okHttpDataSourceFactory = new OkHttpDataSourceFactory(OkHttpClientProvider.getOkHttpClient(), getUserAgent(context), bandwidthMeter);
+    private static HttpDataSource.Factory buildHttpDataSourceFactory(Context context, DefaultBandwidthMeter bandwidthMeter, Map<String, String> requestHeaders, List<String> cookies) {
+        OkHttpDataSourceFactory httpDataSourceFactory = new OkHttpDataSourceFactory(OkHttpClientProvider.getOkHttpClient(), getUserAgent(context), bandwidthMeter);
+        if( cookies != null && !cookies.isEmpty()){
+            String payload = TextUtils.join(";", cookies);
+            httpDataSourceFactory.getDefaultRequestProperties().set(COOKIE, payload);
+        }
+        if(requestHeaders != null){
+            httpDataSourceFactory.getDefaultRequestProperties().set(requestHeaders);
+        }
 
-        if (requestHeaders != null)
-            okHttpDataSourceFactory.getDefaultRequestProperties().set(requestHeaders);
-
-        return okHttpDataSourceFactory;
+        return httpDataSourceFactory;
     }
 }
