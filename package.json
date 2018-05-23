@@ -4,7 +4,7 @@
   "description": "A <Video /> element for react-native",
   "main": "Video.js",
   "license": "MIT",
-  "author": "ARAKESH KALYANKAR <k.rakeshlal@gmail.com> (https://github.com/futhrevo)",
+  "author": "RAKESH KALYANKAR <k.rakeshlal@gmail.com> (https://github.com/futhrevo)",
   "repository": {
     "type": "git",
     "url": "git@github.com:futhrevo/react-native-video.git"
