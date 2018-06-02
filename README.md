@@ -12,11 +12,27 @@ Limited scope video component for Android and iOS:
 
 Requires react-native >= 0.50.0, no backward compatibility.
 
-### Add it to your project
+## TOC
 
-Run `yarn add react-native-video`
+* [Installation](#installation)
+* [Usage](#usage)
 
-#### iOS
+## Installation
+
+Using npm:
+
+```shell
+npm install --save react-native-video
+```
+
+or using yarn:
+
+```shell
+yarn add react-native-video
+```
+
+<details>
+  <summary>iOS</summary>
 
 Run `react-native link` to link the react-native-video library.
 
@@ -35,8 +51,10 @@ If you would like to allow other apps to play music over your video component, a
 }
 ```
 Note: you can also use the `ignoreSilentSwitch` prop, shown below.
+</details>
 
-#### tvOS
+<details>
+  <summary>tvOS</summary>
 
 Run `react-native link` to link the react-native-video library.
 
@@ -57,10 +75,10 @@ Scroll to « Linked Frameworks and Libraries » and tap on the + button
 Select RCTVideo-tvOS
 
 <img src="./docs/tvOS-step-4.jpg" width="40%">
+</details>
 
-That’s all, you can use react-native-video for your tvOS application
-
-#### Android
+<details>
+  <summary>Android</summary>
 
 Run `react-native link` to link the react-native-video library.
 
@@ -68,10 +86,20 @@ Or if you have trouble, make the following additions to the given files manually
 
 **android/settings.gradle**
 
+The newer ExoPlayer library will work for most people.
+
 ```gradle
 include ':react-native-video'
 project(':react-native-video').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-video/android-exoplayer')
 ```
+
+If you need to use the old Android media player based player, use the following instead:
+
+```gradle
+include ':react-native-video'
+project(':react-native-video').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-video/android-exoplayer')
+```
+
 
 **android/app/build.gradle**
 
@@ -101,6 +129,7 @@ protected List<ReactPackage> getPackages() {
     );
 }
 ```
+</details>
 
 ## Usage
 
@@ -111,17 +140,18 @@ protected List<ReactPackage> getPackages() {
 
 <Video source={{uri: "background"}}   // Can be a URL or a local file.
        poster="https://baconmockup.com/300/200/" // uri to an image to display until the video plays
+       posterResizeMode="contain"              // Poster resize mode. One of contain (default), cover, stretch, center, repeat
        ref={(ref) => {
          this.player = ref
        }}                                      // Store reference
        rate={1.0}                              // 0 is paused, 1 is normal.
        volume={1.0}                            // 0 is muted, 1 is normal.
-       muted={false}                           // Mutes the audio entirely.
-       paused={false}                          // Pauses playback entirely.
+       muted={true|false}                      // Mutes the audio entirely. Default false
+       paused={true|false}                     // Pauses playback entirely. Default false
        resizeMode="cover"                      // Fill the whole screen at aspect ratio.*
-       repeat={true}                           // Repeat forever.
-       playInBackground={false}                // Audio continues to play when app entering background.
-       playWhenInactive={false}                // [iOS] Video continues to play when control or notification center are shown.
+       repeat={true|false}                     // Repeat forever. Default false
+       playInBackground={true|false}           // Audio continues to play when app entering background. Default false
+       playWhenInactive={true|false}           // [iOS] Video continues to play when control or notification center are shown. Default false
        ignoreSilentSwitch={"ignore"}           // [iOS] ignore | obey - When 'ignore', audio will still play with the iOS hard silent switch set to silent. When 'obey', audio will toggle with the switch. When not specified, will inherit audio settings as usual.
        progressUpdateInterval={250.0}          // [iOS] Interval to fire onProgress (default to ~250ms)
        onBuffer={this.onBuffer}                // Callback when remote video is buffering
@@ -139,6 +169,7 @@ protected List<ReactPackage> getPackages() {
 
 // Later to trigger fullscreen
 this.player.presentFullscreenPlayer()
+
 // Disable fullscreen
 this.player.dismissFullscreenPlayer()
 
@@ -156,47 +187,24 @@ var styles = StyleSheet.create({
   },
 });
 ```
+To see the full list of available props, you can check the [propTypes](https://github.com/react-native-community/react-native-video/blob/master/Video.js#L246) of the Video.js component.
 
-- * *For iOS you also need to specify muted for this to work*
+- By default, iOS 9+ will only load encrypted HTTPS urls. If you need to load content from a webserver that only supports HTTP, you will need to modify your Info.plist file and add the following entry:
 
-To see full list of available props, you can check [the propTypes](https://github.com/react-native-community/react-native-video/blob/master/Video.js#L246) of the Video.js component.
+<img src="./docs/AppTransportSecuritySetting.png" width="50%">
 
-## Android Expansion File Usage
+For more detailed info check this [article](https://cocoacasts.com/how-to-add-app-transport-security-exception-domains)
+</details>
 
-```javascript
-// Within your render function, assuming you have a file called
-// "background.mp4" in your expansion file. Just add your main and (if applicable) patch version
-<Video source={{uri: "background", mainVer: 1, patchVer: 0}} // Looks for .mp4 file (background.mp4) in the given expansion version.
-       poster="https://baconmockup.com/300/200/" // uri to an image to display until the video plays
-       rate={1.0}                   // 0 is paused, 1 is normal.
-       volume={1.0}                 // 0 is muted, 1 is normal.
-       muted={false}                // Mutes the audio entirely.
-       paused={false}               // Pauses playback entirely.
-       resizeMode="cover"           // Fill the whole screen at aspect ratio.
-       repeat={true}                // Repeat forever.
-       onLoadStart={this.loadStart} // Callback when video starts to load
-       onLoad={this.setDuration}    // Callback when video loads
-       onProgress={this.setTime}    // Callback every ~250ms with currentTime
-       onEnd={this.onEnd}           // Callback when playback finishes
-       onError={this.videoError}    // Callback when video cannot be loaded
-       style={styles.backgroundVideo} />
-
-// Later to enable fullscreen UI mode (ExoPlayer only). Combine with setting the style to be height & width from Dimensions.get('screen')
-this.player.presentFullscreenPlayer()
-// Disable fullscreen UI mode
-this.player.dismissFullscreenPlayer()
-
-// Later on in your styles..
-var styles = Stylesheet.create({
-  backgroundVideo: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    bottom: 0,
-    right: 0,
-  },
-});
+### Android Expansion File Usage
+Within your render function, assuming you have a file called
+"background.mp4" in your expansion file. Just add your main and (if applicable) patch version
 ```
+<Video
+  source={{uri: "background", mainVer: 1, patchVer: 0}}
+/>
+```
+This will look for an .mp4 file (background.mp4) in the given expansion version.
 
 ### Load files with the RN Asset System
 
@@ -204,30 +212,13 @@ The asset system [introduced in RN `0.14`](http://www.reactnative.com/react-nati
 
 ```
 <Video
-  repeat
-  resizeMode='cover'
   source={require('../assets/video/turntable.mp4')}
-  style={styles.backgroundVideo}
 />
 ```
 
 ### Play in background on iOS
 
 To enable audio to play in background on iOS the audio session needs to be set to `AVAudioSessionCategoryPlayback`. See [Apple documentation][3] for additional details. (NOTE: there is now a ticket to [expose this as a prop]( https://github.com/react-native-community/react-native-video/issues/310) )
-
-## Static Methods
-
-`seek(seconds)`
-
-Seeks the video to the specified time (in seconds). Access using a ref to the component
-
-`presentFullscreenPlayer()`
-
-Enable the fullscreen player. Access using a ref to the component.
-
-`dimissFullscreenPlayer()`
-
-Disable the fullscreen player. Access using a ref to the component.
 
 ## Examples
 

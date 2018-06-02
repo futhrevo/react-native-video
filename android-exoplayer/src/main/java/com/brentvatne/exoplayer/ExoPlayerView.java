@@ -24,6 +24,7 @@ import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.ui.SubtitleView;
 
 import java.util.List;
+import java.lang.Object;
 
 @TargetApi(16)
 public final class ExoPlayerView extends FrameLayout {
@@ -108,7 +109,7 @@ public final class ExoPlayerView extends FrameLayout {
             }
             player.addVideoListener(componentListener);
             player.addListener(componentListener);
-            player.addTextOutput(componentListener);
+            player.setTextOutput(componentListener);
         }
     }
 
@@ -211,12 +212,23 @@ public final class ExoPlayerView extends FrameLayout {
         }
 
         @Override
-        public void onPlayerError(ExoPlaybackException e) {
+        public void onPlayerError(ExoPlaybackException error) {
+
+        }
+
+        @Override
+        public void onPositionDiscontinuity(int reason) {
             // Do nothing.
         }
 
-        @Override public void onPositionDiscontinuity(int reason) {
+        @Override
+        public void onTimelineChanged(Timeline timeline, Object manifest, int reason) {
             // Do nothing.
+        }
+
+        @Override
+        public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
+
         }
 
         @Override
@@ -224,17 +236,9 @@ public final class ExoPlayerView extends FrameLayout {
             // Do nothing.
         }
 
-        @Override public void onSeekProcessed() {
-
-        }
-
-        @Override public void onTimelineChanged(Timeline timeline, Object manifest, int reason) {
-            // Do nothing.
-        }
-
         @Override
-        public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
-            updateForCurrentTrackSelections();
+        public void onSeekProcessed() {
+            // Do nothing.
         }
     }
 

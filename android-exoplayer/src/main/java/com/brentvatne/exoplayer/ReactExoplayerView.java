@@ -22,6 +22,7 @@ import com.facebook.react.uimanager.ThemedReactContext;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.ExoPlaybackException;
+import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.PlaybackParameters;
@@ -98,7 +99,6 @@ class ReactExoplayerView extends FrameLayout implements
     private boolean isPaused = true;
     private boolean isBuffering;
     private float rate = 1f;
-    private boolean refreshLoad = false;
 
     // Props from React
     private Uri srcUri;
@@ -107,8 +107,6 @@ class ReactExoplayerView extends FrameLayout implements
     private boolean disableFocus;
     private float mProgressUpdateInterval = 250.0f;
     private boolean playInBackground = false;
-    private Map<String, String> requestHeaders;
-    private List<String> cookies = new ArrayList<>();
     // \ End props
 
     // React
@@ -139,9 +137,9 @@ class ReactExoplayerView extends FrameLayout implements
 
     public ReactExoplayerView(ThemedReactContext context) {
         super(context);
+        this.themedReactContext = context;
         createViews();
         this.eventEmitter = new VideoEventEmitter(context);
-        this.themedReactContext = context;
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         themedReactContext.addLifecycleEventListener(this);
         audioBecomingNoisyReceiver = new AudioBecomingNoisyReceiver(themedReactContext);
@@ -370,7 +368,8 @@ class ReactExoplayerView extends FrameLayout implements
      * @return A new DataSource factory.
      */
     private DataSource.Factory buildDataSourceFactory(boolean useBandwidthMeter) {
-        return DataSourceUtil.getDefaultDataSourceFactory(getContext(), useBandwidthMeter ? BANDWIDTH_METER : null, requestHeaders,null, refreshLoad);
+
+        return DataSourceUtil.getDefaultDataSourceFactory(this.themedReactContext, useBandwidthMeter ? BANDWIDTH_METER : null);
     }
 
     // AudioManager.OnAudioFocusChangeListener implementation
@@ -444,15 +443,6 @@ class ReactExoplayerView extends FrameLayout implements
         Log.d(TAG, text);
     }
 
-    @Override
-    public void onRepeatModeChanged(int repeatMode) {
-        // Do nothing.
-    }
-
-    @Override public void onShuffleModeEnabledChanged(boolean shuffleModeEnabled) {
-
-    }
-
     private void startProgressHandler() {
         progressHandler.sendEmptyMessage(SHOW_PROGRESS);
     }
@@ -488,13 +478,31 @@ class ReactExoplayerView extends FrameLayout implements
             // which they seeked.
             updateResumePosition();
         }
+        // When repeat is turned on, reaching the end of the video will not cause a state change
+        // so we need to explicitly detect it.
+        if (reason == ExoPlayer.DISCONTINUITY_REASON_PERIOD_TRANSITION
+                && player.getRepeatMode() == Player.REPEAT_MODE_ONE) {
+            eventEmitter.end();
+        }
     }
 
-    @Override public void onSeekProcessed() {
-
+    @Override
+    public void onTimelineChanged(Timeline timeline, Object manifest, int reason) {
+        // Do nothing.
     }
 
-    @Override public void onTimelineChanged(Timeline timeline, Object manifest, int reason) {
+    @Override
+    public void onSeekProcessed() {
+        // Do nothing.
+    }
+
+    @Override
+    public void onShuffleModeEnabledChanged(boolean shuffleModeEnabled) {
+        // Do nothing.
+    }
+
+    @Override
+    public void onRepeatModeChanged(int repeatMode) {
         // Do nothing.
     }
 
@@ -533,8 +541,7 @@ class ReactExoplayerView extends FrameLayout implements
                             decoderInitializationException.decoderName);
                 }
             }
-        }
-        else if (e.type == ExoPlaybackException.TYPE_SOURCE) {
+        } else if (e.type == ExoPlaybackException.TYPE_SOURCE) {
             ex = e.getSourceException();
             errorString = getResources().getString(R.string.unrecognized_media_format);
         }
@@ -578,18 +585,18 @@ class ReactExoplayerView extends FrameLayout implements
 
             this.srcUri = uri;
             this.extension = extension;
-            this.requestHeaders = headers;
-            if(!newcookies.isEmpty()){
-                if(!cookies.isEmpty()){
-                    cookies.clear();
-                }
+//            this.requestHeaders = headers;
+//            if(!newcookies.isEmpty()){
+//                if(!cookies.isEmpty()){
+//                    cookies.clear();
+//                }
+//
+//                cookies.addAll(newcookies);
+//                refreshLoad = true;
+//            }
 
-                cookies.addAll(newcookies);
-                refreshLoad = true;
-            }
-
-            this.mediaDataSourceFactory = DataSourceUtil.getDefaultDataSourceFactory(getContext(), BANDWIDTH_METER, requestHeaders, newcookies, refreshLoad);
-            refreshLoad = false;
+            this.mediaDataSourceFactory = DataSourceUtil.getDefaultDataSourceFactory(this.themedReactContext, BANDWIDTH_METER);
+//            refreshLoad = false;
 
             if (!isOriginalSourceNull && !isSourceEqual) {
                 reloadSource();
@@ -608,7 +615,7 @@ class ReactExoplayerView extends FrameLayout implements
 
             this.srcUri = uri;
             this.extension = extension;
-            this.mediaDataSourceFactory = DataSourceUtil.getRawDataSourceFactory(getContext());
+            this.mediaDataSourceFactory = DataSourceUtil.getRawDataSourceFactory(this.themedReactContext);
 
             if (!isOriginalSourceNull && !isSourceEqual) {
                 reloadSource();
@@ -626,6 +633,13 @@ class ReactExoplayerView extends FrameLayout implements
     }
 
     public void setRepeatModifier(boolean repeat) {
+        if (player != null) {
+            if (repeat) {
+                player.setRepeatMode(Player.REPEAT_MODE_ONE);
+            } else {
+                player.setRepeatMode(Player.REPEAT_MODE_OFF);
+            }
+        }
         this.repeat = repeat;
     }
 
@@ -688,7 +702,7 @@ class ReactExoplayerView extends FrameLayout implements
         for (HttpCookie cookie : cookies) {
             cookieJar.add(uri, cookie);
         }
-        refreshLoad = true;
+//        refreshLoad = true;
         printCookies();
 
     }
