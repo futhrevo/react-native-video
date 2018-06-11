@@ -309,9 +309,18 @@ Video.propTypes = {
   poster: PropTypes.string,
   posterResizeMode: Image.propTypes.resizeMode,
   repeat: PropTypes.bool,
+  allowsExternalPlayback: PropTypes.bool,
+  selectedTextTrack: PropTypes.shape({
+    type: PropTypes.string.isRequired,
+    value: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.number
+    ])
+  }),
   paused: PropTypes.bool,
   muted: PropTypes.bool,
   volume: PropTypes.number,
+  stereoPan: PropTypes.number,
   rate: PropTypes.number,
   playInBackground: PropTypes.bool,
   playWhenInactive: PropTypes.bool,
@@ -320,6 +329,7 @@ Video.propTypes = {
   controls: PropTypes.bool,
   currentTime: PropTypes.number,
   progressUpdateInterval: PropTypes.number,
+  useTextureView: PropTypes.bool,
   onLoadStart: PropTypes.func,
   onLoad: PropTypes.func,
   onBuffer: PropTypes.func,

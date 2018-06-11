@@ -8,10 +8,6 @@ def _buildToolsVersion = _ext.has('buildToolsVersion') ? _ext.buildToolsVersion 
 def _minSdkVersion = _ext.has('minSdkVersion') ? _ext.minSdkVersion : 16
 def _targetSdkVersion = _ext.has('targetSdkVersion') ? _ext.targetSdkVersion : 27
 
-ext {
-    exoPlayerVersion = '2.8.0'
-}
-
 android {
     compileSdkVersion _compileSdkVersion
     buildToolsVersion _buildToolsVersion
@@ -21,17 +17,14 @@ android {
         targetSdkVersion _targetSdkVersion
         versionCode 1
         versionName "1.0"
+        ndk {
+            abiFilters "armeabi-v7a", "x86"
+        }
     }
 }
 
 dependencies {
-    provided 'com.facebook.react:react-native:+'
-    compile "com.google.android.exoplayer:exoplayer-core:$exoPlayerVersion"
-    compile "com.google.android.exoplayer:exoplayer-hls:$exoPlayerVersion"
-    compile "com.google.android.exoplayer:exoplayer-dash:$exoPlayerVersion"
-    compile "com.google.android.exoplayer:exoplayer-ui:$exoPlayerVersion"
-    compile("com.google.android.exoplayer:extension-okhttp:$exoPlayerVersion") {
-        exclude group: 'com.squareup.okhttp3', module: 'okhttp'
-    }
-    compile 'com.squareup.okhttp3:okhttp:3.10.0'
+    //noinspection GradleDynamicVersion
+    provided "com.facebook.react:react-native:${_reactNativeVersion}"
+    compile 'com.yqritc:android-scalablevideoview:1.0.4'
 }
